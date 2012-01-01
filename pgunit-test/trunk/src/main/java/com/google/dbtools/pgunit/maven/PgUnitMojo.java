@@ -6,17 +6,20 @@ package com.google.dbtools.pgunit.maven;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -33,6 +36,8 @@ import org.apache.maven.plugin.MojoFailureException;
 public class PgUnitMojo extends AbstractMojo {
 
 	private static final String PG_UNIT = "/dklab_pgunit_2008-11-09.sql";
+	
+	private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
 	/**
 	 * @parameter expression="${dabaseHost}" default-value="localhost"
@@ -64,6 +69,11 @@ public class PgUnitMojo extends AbstractMojo {
 	 */
 	private String testDirectory;
 
+	/**
+	 * @parameter expression="${testOutput}" default-value="target/pgunit/output.log"
+	 */
+	private String outputPath;
+			
 	private Connection connection;
 
 	/*
@@ -77,12 +87,28 @@ public class PgUnitMojo extends AbstractMojo {
 		// - read properties file
 		// - db connection
 		this.initConnection();
+		this.getLog().info( "connection established" );
+		
 		this.installPgunit();
+		this.getLog().info( "PgUnit installed" );
+
 		this.installTests();
+		this.getLog().info( "tests installed" );
 
-		// - run tests
+		String testLog = this.runTest();
+		this.getLog().info( "test run" );
+		this.getLog().debug( testLog );
+		
+		// write log to file
+		File logoutput = this.writeOutputFile( testLog );
+		this.getLog().info( "output written" );
+		
 		// - check output for errors
+		if ( !this.wasTestSuccessful( logoutput ) ){
+			this.getLog().info( "test failures occured see file for details: " + logoutput.getAbsolutePath() );
+		}
 
+		this.dropPgunit();
 	}
 
 	/**
@@ -111,19 +137,26 @@ public class PgUnitMojo extends AbstractMojo {
 					+ e.getLocalizedMessage() );
 		}
 	}
-
-	private void installPgunit() throws MojoExecutionException {
-
-		// drop pgunit schema if exists
-		String dropSchema = "DROP SCHEMA pgunit CASCADE";
-		Statement statement;
+	
+	/** drops the PgUnit schema if it exists.
+	 * 
+	 * @throws MojoExecutionException
+	 */
+	private void dropPgunit() throws MojoExecutionException {
 		try {
-			statement = this.connection.createStatement();
+			String dropSchema = "DROP SCHEMA pgunit CASCADE";
+			Statement statement = this.connection.createStatement();
 			statement.execute( dropSchema );
 		} catch ( SQLException e ) {
 			this.getLog().error( e.getLocalizedMessage() );
+			//throw new MojoExecutionException( "could not drop PgUnit" );
 		}
+	}
 
+	private void installPgunit() throws MojoExecutionException {
+
+		this.dropPgunit();
+		
 		InputStream sqlStream = PgUnitMojo.class.getResourceAsStream( PG_UNIT );
 		String sqlString;
 		try {
@@ -133,7 +166,7 @@ public class PgUnitMojo extends AbstractMojo {
 		}
 
 		try {
-			statement = this.connection.createStatement();
+			Statement statement = this.connection.createStatement();
 			statement.execute( sqlString );
 		} catch ( SQLException e ) {
 			this.getLog().error( e.getLocalizedMessage() );
@@ -145,11 +178,10 @@ public class PgUnitMojo extends AbstractMojo {
 		File directory = new File( testDirectory );
 
 		Set<File> sqlFiles = this.getFiles( directory, ".sql" );
-		Statement statement;
 
 		try {
 			String testSql;
-			statement = this.connection.createStatement();
+			Statement statement = this.connection.createStatement();
 			for ( File f : sqlFiles ) {
 				FileInputStream fis;
 				fis = new FileInputStream( f );
@@ -179,5 +211,65 @@ public class PgUnitMojo extends AbstractMojo {
 			}
 		}
 		return files;
+	}
+	
+	private String runTest() throws MojoExecutionException {
+		StringBuilder logOutputBuilder = new StringBuilder();
+		try {
+			String runTests = "SELECT pgunit.testrunner(NULL)";
+			Statement statement = this.connection.createStatement();
+			statement.execute( runTests );
+			
+			SQLWarning sw = statement.getWarnings();
+			while( sw != null ){
+				logOutputBuilder.append( sw.getMessage() );
+				logOutputBuilder.append( LINE_SEPARATOR );
+				sw = sw.getNextWarning();
+			}
+			
+		} catch ( SQLException e ) {
+			this.getLog().error( e.getLocalizedMessage() );
+			throw new MojoExecutionException( "could not drop PgUnit" );
+		}
+		return logOutputBuilder.toString();
+	}
+	
+	private File writeOutputFile( String output ) throws MojoExecutionException{
+		try {
+			File f = new File( this.outputPath );
+			f.getParentFile().mkdirs();
+			f.createNewFile();
+			FileWriter writer = new FileWriter( f );
+			writer.append( output );
+			writer.flush();
+			writer.close();
+			return f;
+		} catch ( IOException e ) {
+			this.getLog().error( e.getLocalizedMessage() );
+			throw new MojoExecutionException( e.getLocalizedMessage() );
+		}
+		
+	}
+	
+	/** searches for a line "FAILURE!"
+	 * 
+	 * @param file
+	 * @return
+	 * @throws MojoExecutionException
+	 */
+	private boolean wasTestSuccessful( File file ) throws MojoExecutionException{
+		String re = "^FAILURES!$";
+		
+		try {
+			LineIterator li = FileUtils.lineIterator( file );
+			while ( li.hasNext()) {
+				String line = li.nextLine();
+				if (line.matches(re)) return false;
+			}
+			return true;
+		} catch ( IOException e ) {
+			this.getLog().error( e );
+			throw new MojoExecutionException( e.getLocalizedMessage() );
+		}
 	}
 }
