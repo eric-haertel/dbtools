@@ -9,12 +9,14 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -62,7 +64,7 @@ public class PgUnitMojo extends AbstractMojo {
 	/**
 	 * @parameter expression="${databaseName}"
 	 */
-	private String databaseName;
+	public String databaseName;
 
 	/**
 	 * @parameter expression="${testDirectory}" default-value="src/test/pgunit"
@@ -73,6 +75,13 @@ public class PgUnitMojo extends AbstractMojo {
 	 * @parameter expression="${testOutput}" default-value="target/pgunit/output.log"
 	 */
 	private String outputPath;
+	
+	
+	/**
+	 * @parameter expression="${propertiesFile}"
+	 */
+	private String propertiesFile;
+	
 			
 	private Connection connection;
 
@@ -83,18 +92,48 @@ public class PgUnitMojo extends AbstractMojo {
 	 */
 	public void execute() throws MojoExecutionException, MojoFailureException {
 
-		// TODO
-		// - read properties file
-		// - db connection
+		// read properties file
+		if ( this.propertiesFile != null ){
+			// parse properties
+			Properties properties = new Properties();
+			try {
+			    properties.load( new FileInputStream( this.propertiesFile ) );
+			} catch (IOException e) {
+				this.getLog().error( e );
+				throw new MojoExecutionException( e.getLocalizedMessage() );
+			}
+
+			// set properties
+			for ( String key : properties.stringPropertyNames() ) {
+				String value = properties.getProperty( key );
+				 try {
+					Field field = this.getClass().getDeclaredField( key );
+					field.set( this, value );
+				} catch ( IllegalArgumentException e ) {
+					throw new MojoExecutionException( e.getLocalizedMessage() );
+				} catch ( SecurityException e ) {
+					throw new MojoExecutionException( e.getLocalizedMessage() );
+				} catch ( IllegalAccessException e ) {
+					throw new MojoExecutionException( e.getLocalizedMessage() );
+				} catch ( NoSuchFieldException e ) {
+					this.getLog().warn( e );
+				}
+			}
+		}
+		
+		// db connection
 		this.initConnection();
 		this.getLog().info( "connection established" );
 		
+		// install PgUnit
 		this.installPgunit();
 		this.getLog().info( "PgUnit installed" );
 
+		// install tests
 		this.installTests();
 		this.getLog().info( "tests installed" );
 
+		// run test
 		String testLog = this.runTest();
 		this.getLog().info( "test run" );
 		this.getLog().debug( testLog );
