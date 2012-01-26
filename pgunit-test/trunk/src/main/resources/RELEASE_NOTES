@@ -1,0 +1,21 @@
+RELEASE NOTES PgUnit Maven plugin
+=================================
+
+VERSION 0.0.2
+=============
+
+* issue 1: Maven build should fail in case of tests errors
+* log level set to warning (was error) for SQL exceptions at dropping of schema 'pgunit'  
+
+
+VERSION 0.0.1
+=============
+
+first release contains the basic features:
+* maven plugin runing
+* configurable with properties file
+* installs PgUnit
+* installs test from configured directory
+* runs tests
+* stores the test output
+* drops schema 'pgunit' at the end 

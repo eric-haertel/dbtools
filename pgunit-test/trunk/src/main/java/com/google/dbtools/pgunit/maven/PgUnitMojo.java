@@ -145,6 +145,7 @@ public class PgUnitMojo extends AbstractMojo {
 		// - check output for errors
 		if ( !this.wasTestSuccessful( logoutput ) ){
 			this.getLog().info( "test failures occured see file for details: " + logoutput.getAbsolutePath() );
+			throw new MojoFailureException( "Failures in test!" );
 		}
 
 		this.dropPgunit();
@@ -187,8 +188,7 @@ public class PgUnitMojo extends AbstractMojo {
 			Statement statement = this.connection.createStatement();
 			statement.execute( dropSchema );
 		} catch ( SQLException e ) {
-			this.getLog().error( e.getLocalizedMessage() );
-			//throw new MojoExecutionException( "could not drop PgUnit" );
+			this.getLog().warn( e.getLocalizedMessage() );
 		}
 	}
 
