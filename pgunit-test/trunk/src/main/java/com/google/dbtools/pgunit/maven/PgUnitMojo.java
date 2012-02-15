@@ -167,10 +167,16 @@ public class PgUnitMojo extends AbstractMojo {
 		}
 
 		try {
-			this.connection = DriverManager.getConnection( "jdbc:postgresql://"
+			this.connection = DriverManager.getConnection( 
+					"jdbc:postgresql://"
 					+ this.databaseHost + ":" + this.databasePort + "/"
-					+ this.databaseName, this.databaseUser,
+					+ this.databaseName, 
+					this.databaseUser,
 					this.databasePassword );
+			
+			String setSearchPath= "SET search_path TO public";
+			Statement statement = this.connection.createStatement();
+			statement.execute( setSearchPath );
 		} catch ( SQLException e ) {
 			this.getLog().error( e );
 			throw new MojoExecutionException( "could not connect: "
@@ -255,7 +261,7 @@ public class PgUnitMojo extends AbstractMojo {
 	private String runTest() throws MojoExecutionException {
 		StringBuilder logOutputBuilder = new StringBuilder();
 		try {
-			String runTests = "SELECT pgunit.testrunner(NULL)";
+			String runTests = "SET search_path TO public; SELECT pgunit.testrunner(NULL)";
 			Statement statement = this.connection.createStatement();
 			statement.execute( runTests );
 			
