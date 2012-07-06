@@ -1,4 +1,4 @@
-package de.base.parser;
+package com.google.dbtools.plpgparser;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class SelectStatement implements Statement{
 
 
 	/* (non-Javadoc)
-	 * @see de.base.parser.Statement#getType()
+	 * @see com.google.dbtools.plpgparser.Statement#getType()
 	 */
 	public StatementType getType() {
 		return StatementType.SELECT;

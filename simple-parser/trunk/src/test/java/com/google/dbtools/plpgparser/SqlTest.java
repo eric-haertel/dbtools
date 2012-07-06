@@ -1,6 +1,5 @@
-package de.base.parser;
+package com.google.dbtools.plpgparser;
 
-import junit.framework.Assert;
 import org.junit.Test;
 
 /**

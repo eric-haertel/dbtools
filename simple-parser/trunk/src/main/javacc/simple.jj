@@ -15,17 +15,17 @@ options  {
 	IGNORE_CASE 	= true;
 }
 
-PARSER_BEGIN(Simple)
-	package de.base.parser;
-	
-	import java.util.*;
-	
-	class Simple {
+PARSER_BEGIN(PlpgsqlParser)
+
+	package com.google.dbtools;
+
+	import com.google.dbtools.plpgsql
+	class PlpgsqlParser{
 		
 	
 	}
 
-PARSER_END(Simple)
+PARSER_END(PlpgsqlParser)
 
 SKIP:
 {

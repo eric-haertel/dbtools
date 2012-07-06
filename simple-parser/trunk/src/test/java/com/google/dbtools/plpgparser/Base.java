@@ -1,4 +1,4 @@
-package de.base.parser;
+package com.google.dbtools.plpgparser;
 
 import java.io.File;
 import java.io.FileInputStream;
