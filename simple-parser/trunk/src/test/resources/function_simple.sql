@@ -13,6 +13,8 @@ create or replace function test_2()
 returns void language plpgsql
 as
 $BODY$
+/** TEST_COMMENT
+ */
 declare
 begin
 

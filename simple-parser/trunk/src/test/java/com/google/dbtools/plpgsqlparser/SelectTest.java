@@ -1,7 +1,9 @@
-package com.google.dbtools.plpgparser;
+package com.google.dbtools.plpgsqlparser;
 
 import java.util.List;
 
+import com.google.dbtools.plpgsqlparser.entities.old.SelectStatement;
+import com.google.dbtools.plpgsqlparser.entities.old.Statement;
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;

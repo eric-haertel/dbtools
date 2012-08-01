@@ -1,4 +1,4 @@
-package com.google.dbtools.plpgparser;
+package com.google.dbtools.plpgsqlparser;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,8 +14,8 @@ public class CreateTest extends Base{
 	static final String TABLE_CREATE = "/table_create.sql";
 
 	@Test
-    public void testTypeCreate(){
-        try {
+   public void testTypeCreate(){
+   	try {
             this.parse(TYPE_CREATE, false);
         } catch ( ParserTestException e ) {
             Assert.fail(e.getLocalizedMessage());

@@ -1,6 +1,8 @@
-package com.google.dbtools.plpgparser;
+package com.google.dbtools.plpgsqlparser.entities.old;
 
-/** 
+import com.google.dbtools.plpgsqlparser.entities.old.StatementType;
+
+/**
  * 
  * @author Eric Härtel (eric.haertel@gmail.com)
  *

@@ -1,4 +1,4 @@
-package com.google.dbtools.plpgparser;
+package com.google.dbtools.plpgsqlparser.entities.old;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import java.util.List;
  * @author Eric Härtel (eric.haertel@gmail.com)
  *
  */
-public class SelectStatement implements Statement{
+public class SelectStatement implements Statement {
 
 	private StringBuilder content;
 	
@@ -17,7 +17,7 @@ public class SelectStatement implements Statement{
 
 
 	/* (non-Javadoc)
-	 * @see com.google.dbtools.plpgparser.Statement#getType()
+	 * @see com.google.dbtools.plpgsqlparser.entities.old.Statement#getType()
 	 */
 	public StatementType getType() {
 		return StatementType.SELECT;

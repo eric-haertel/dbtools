@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.google.dbtools.plpgparser;
+package com.google.dbtools.plpgsqlparser;
 
 /**
  * @author Eric Härtel (eric.haertel@gmail.com)

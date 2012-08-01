@@ -1,4 +1,4 @@
-package com.google.dbtools.plpgparser;
+package com.google.dbtools.plpgsqlparser;
 
 import junit.framework.Assert;
 

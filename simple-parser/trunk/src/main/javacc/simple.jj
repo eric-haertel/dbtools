@@ -1,7 +1,3 @@
-/*
- * Simple parser - test project for parsing some SQL features
- */
-
 options  {
 	STATIC			= false;
 	
@@ -17,13 +13,30 @@ options  {
 
 PARSER_BEGIN(PlpgsqlParser)
 
-	package com.google.dbtools;
+package com.google.dbtools.plpgsqlparser;
 
-	import com.google.dbtools.plpgsql
-	class PlpgsqlParser{
-		
-	
-	}
+import java.util.*;
+import org.apache.log4j.Logger;
+import com.google.dbtools.plpgsqlparser.entities.*;
+
+class PlpgsqlParser{
+
+	static final Logger logger = Logger.getLogger( PlpgsqlParser.class );
+
+	Set<DatabaseObject> objects = new HashSet<DatabaseObject>();
+	Set<Function> functions = new HashSet<Function>();
+
+	DatabaseObject currentObject;
+	Comment docComment;
+
+	public Set<DatabaseObject> getObjects(){
+		return this.objects;
+	};
+
+	public Set<Function> getFunctions(){
+		return this.functions;
+	};
+}
 
 PARSER_END(PlpgsqlParser)
 
@@ -231,19 +244,29 @@ TOKEN : /* Numeric Constants */
 
 
 /** root production */
-List<Statement> parseSimple():
+void parse():
 {
 }
 {
 	StatementSequence() 
-	<EOF>
-	{return null;}
 }
 
-void ObjectName():
-{}
+String ObjectName():
 {
-    <S_IDENTIFIER> ("." <S_IDENTIFIER>)?
+	Token identifier;
+	StringBuilder name = new StringBuilder();
+}
+{
+    identifier = <S_IDENTIFIER>
+    { name.append( identifier.toString() ); }
+    (	"."
+    	{ name.append( "." ); }
+    	identifier = <S_IDENTIFIER>
+    	{ name.append( identifier.toString() ); }
+    )?
+    {
+    	return name.toString() ;
+    }
 }
 
 // 
@@ -290,10 +313,17 @@ void SetParameter():
 
 // PLSQL FUNCTION STATEMENT ////////////////////////////////////////////////////////
 void FunctionDeclaration():
-{}
+{
+	Function function = new Function();
+	String functionName;
+}
 {
 	<K_CREATE> [ <K_OR> <K_REPLACE> ] <K_FUNCTION>
-	ObjectName() "(" [ParameterList()] ")"
+
+	functionName = ObjectName()
+	{ function.setName( functionName );	}
+
+	"(" [ParameterList()] ")"
 	<K_RETURNS> (
 			TypeDefinition()
 		| 	<K_VOID>
@@ -305,6 +335,11 @@ void FunctionDeclaration():
 	[ <K_COST> <S_NUMBER> ]
 	<K_AS>
 	FunctionBody()
+
+	{
+		this.functions.add( function );
+		function.setDocComment( this.docComment );
+	}
 }
 
 void ParameterList():
@@ -391,9 +426,11 @@ void QuotedTag():
 }
 
 void Comment():
-{}
+{	Token comment;
+}
 {
-	<S_DOC_COMMENT>		
+	comment = <S_DOC_COMMENT>
+	{ this.docComment.append( comment.toString() ); }
 }
 
 void VariableDeclarationList():
